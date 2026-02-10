@@ -8,7 +8,15 @@ yarn-error.log
 /.idea
 static
 coverage
+# macOS
+._*
+.AppleDouble
+.LSOverride
+**/.DS_Store
+**/._*
 
+# Dependency directories
+**/node_modules/
 .medusa
 
 !src/**

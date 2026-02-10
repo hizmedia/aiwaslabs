@@ -1,18 +1,19 @@
 import { Text } from "@medusajs/ui"
-
+import Image from "next/image"
 import Medusa from "../../../common/icons/medusa"
-import NextJs from "../../../common/icons/nextjs"
 
 const MedusaCTA = () => {
   return (
-    <Text className="flex gap-x-2 txt-compact-small-plus items-center">
+    <Text>   
+      <a href="https://www.hizmedia.com" target="_blank" rel="noreferrer" className="flex gap-x-2 txt-compact-small-plus items-center">
       Powered by
-      <a href="https://www.medusajs.com" target="_blank" rel="noreferrer">
-        <Medusa fill="#9ca3af" className="fill-[#9ca3af]" />
-      </a>
-      &
-      <a href="https://nextjs.org" target="_blank" rel="noreferrer">
-        <NextJs fill="#9ca3af" />
+        <Image
+          src="https://res.cloudinary.com/dky6bti4g/image/upload/v1753113040/Logo_h08daj.png"
+          alt="Hizmedia Logo"
+          width={30}
+          height={30}
+          className="object-contain"
+        />
       </a>
     </Text>
   )
