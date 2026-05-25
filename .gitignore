@@ -1,1 +1,14 @@
-.idea/
+# Dependencies
+node_modules/
+
+# Environment variables — never commit these
+.env
+.env.local
+.env.*.local
+
+# Next.js build output
+.next/
+out/
+
+# OS
+.DS_Store

@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-merriweather: var(--font-merriweather);
+  --font-poppins: var(--font-poppins);
+  --font-jetbrains: var(--font-jetbrains);
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #02034a;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* date input color-scheme for dark backgrounds */
+.scheme-dark {
+  color-scheme: dark;
+}

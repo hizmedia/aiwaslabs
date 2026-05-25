@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+:root {
+  --primary:        #02034a;
+  --primary-dark:   #010238;
+  --accent:         #00B4D8;
+  --accent-hover:   #0077b6;
+  --surface:        #F7F6FC;
+  --surface-raised: #CAF0F8;
+  --border:         #dde4f0;
+  --ink:            #02034a;
+  --ink-muted:      #6b7280;
+}
+
+@theme inline {
+  --font-sans: var(--font-poppins);
+  --font-serif: var(--font-merriweather);
+}
+
+body {
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.font-merriweather { font-family: var(--font-merriweather), Georgia, serif; }
+.font-poppins      { font-family: var(--font-poppins), system-ui, sans-serif; }
