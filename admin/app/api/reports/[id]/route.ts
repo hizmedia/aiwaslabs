@@ -38,19 +38,23 @@ export async function PATCH(
 ) {
   const { id } = await params
   const body = await req.json()
-  const { sample_date, notes, biomarkers } = body
+  const { sample_date, notes, biomarkers, document_json, status } = body
 
   const [report] = await query<{ id: string }>(
     `UPDATE reports
-     SET sample_date = COALESCE($1, sample_date),
-         notes       = COALESCE($2, notes),
-         biomarkers  = COALESCE($3, biomarkers)
-     WHERE id = $4
+     SET sample_date   = COALESCE($1, sample_date),
+         notes         = COALESCE($2, notes),
+         biomarkers    = COALESCE($3, biomarkers),
+         document_json = COALESCE($4, document_json),
+         status        = COALESCE($5, status)
+     WHERE id = $6
      RETURNING id`,
     [
       sample_date ?? null,
       notes ?? null,
       biomarkers != null ? JSON.stringify(biomarkers) : null,
+      document_json != null ? JSON.stringify(document_json) : null,
+      status ?? null,
       id,
     ]
   )

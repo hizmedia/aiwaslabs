@@ -67,7 +67,7 @@ export default async function EditReportPage({ params }: { params: Promise<{ id:
             patient_id: report.patient_id,
             product_id: report.product_id,
             booking_id: report.booking_id ?? '',
-            sample_date: report.sample_date.split('T')[0],
+            sample_date: String(report.sample_date).slice(0, 10),
             notes: report.notes ?? '',
             biomarkers: report.biomarkers?.length ? report.biomarkers : [{ name: '', value: '', unit: '', reference_range: '' }],
           }}

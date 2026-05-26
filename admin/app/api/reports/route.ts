@@ -26,15 +26,15 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { patient_id, product_id, booking_id, sample_date, notes, biomarkers } = body
+  const { patient_id, product_id, booking_id, sample_date, notes, biomarkers, source_file_url, status } = body
 
   if (!patient_id || !product_id || !sample_date) {
     return NextResponse.json({ error: 'patient_id, product_id and sample_date are required' }, { status: 400 })
   }
 
   const [report] = await query<{ id: string }>(
-    `INSERT INTO reports (patient_id, product_id, booking_id, sample_date, notes, biomarkers)
-     VALUES ($1, $2, $3, $4, $5, $6)
+    `INSERT INTO reports (patient_id, product_id, booking_id, sample_date, notes, biomarkers, source_file_url, status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      RETURNING id`,
     [
       patient_id,
@@ -43,6 +43,8 @@ export async function POST(req: NextRequest) {
       sample_date,
       notes || null,
       JSON.stringify(biomarkers ?? []),
+      source_file_url || null,
+      status || 'draft',
     ]
   )
 
