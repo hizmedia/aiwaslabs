@@ -88,13 +88,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       url: pageUrl,
       title: `${product.title} | AiwasLabs`,
       description,
-      images: image ? [{ url: image, alt: product.title }] : undefined,
+      ...(image && { images: [{ url: image, alt: product.title }] }),
     },
     twitter: {
       card: 'summary_large_image',
       title: `${product.title} | AiwasLabs`,
       description,
-      images: image ? [image] : undefined,
+      ...(image && { images: [image] }),
     },
     other: {
       'script:ld+json': JSON.stringify(productSchema),
