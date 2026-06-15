@@ -61,13 +61,11 @@ export const metadata: Metadata = {
     siteName: 'AiwasLabs',
     title: 'AiwasLabs - Private Blood Testing · Stoke-on-Trent',
     description: 'Same-day private blood tests in Stoke-on-Trent. Doctor-reviewed results, no GP referral needed.',
-    images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: 'AiwasLabs - Private Blood Testing' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'AiwasLabs - Private Blood Testing · Stoke-on-Trent',
     description: 'Same-day private blood tests in Stoke-on-Trent. Doctor-reviewed results, no GP referral needed.',
-    images: [OG_IMAGE],
   },
   icons: {
     icon: [
