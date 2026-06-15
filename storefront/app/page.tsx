@@ -1,10 +1,26 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
 import Script from 'next/script'
+
+export const metadata: Metadata = {
+  title: 'Private Blood Testing in Stoke-on-Trent - Same-Day Results',
+  description: 'AiwasLabs offers same-day private blood tests at our Stoke-on-Trent clinic. Doctor-reviewed results, no GP referral needed. Cholesterol, hormones, diabetes, vitamins and more.',
+  alternates: { canonical: 'https://aiwaslabs.co.uk' },
+  openGraph: {
+    type: 'website',
+    url: 'https://aiwaslabs.co.uk',
+    title: 'AiwasLabs - Private Blood Testing · Stoke-on-Trent',
+    description: 'Same-day private blood tests. Doctor-reviewed results. No referral needed.',
+  },
+}
 import { query } from '@/lib/db'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import ProductShowcase from '@/components/ProductShowcase'
+import ProcessFlow from '@/components/ProcessFlow'
+import { TealUnderline } from '@/components/TealUnderline'
+import { ARTICLES, formatDate } from '@/lib/articles'
 
 type ShowcaseProduct = {
   id: string
@@ -69,14 +85,14 @@ export default async function HomePage() {
         <div className="relative z-[2] mx-auto max-w-7xl px-6 sm:px-8 lg:px-10 py-16 lg:py-24">
           <div className="grid items-center gap-10 lg:grid-cols-[1fr_auto]">
 
-            {/* LEFT — copy */}
+            {/* LEFT - copy */}
             <div className="max-w-[620px]">
               <span className="inline-flex items-center gap-[10px] font-poppins text-[11.5px] font-bold uppercase tracking-[0.18em] text-[#00B4D8] before:inline-block before:h-[2px] before:w-[18px] before:flex-shrink-0 before:bg-[#00B4D8] before:content-['']">
                 Private Blood Testing · Stoke-on-Trent
               </span>
-              <h1 className="mt-5 font-merriweather text-[clamp(32px,5vw,72px)] font-black leading-[0.9] tracking-[-0.045em] text-white">
+              <h1 className="mt-5 font-merriweather text-[clamp(32px,5vw,72px)] font-black leading-[1.05] tracking-[-0.045em] text-white">
                 We Help You Get Your{' '}
-                <span className="text-[#00B4D8]">Health Back.</span>
+                <TealUnderline>Health Back.</TealUnderline>
               </h1>
               <p className="mt-5 max-w-[480px] font-poppins text-[clamp(14px,1.8vw,17px)] leading-[1.55] text-[rgba(255,255,255,.75)]">
                 Doctor-Led blood testing in Stoke-on-Trent. Same-day results, reviewed by Dr. Tanzil.
@@ -94,7 +110,7 @@ export default async function HomePage() {
               </div>
             </div>
 
-            {/* RIGHT — video + CTAs */}
+            {/* RIGHT - video + CTAs */}
             <div className="flex w-full max-w-[500px] flex-col gap-4">
               <div className="overflow-hidden rounded-[20px] shadow-[0_18px_48px_rgba(0,0,0,.35)]">
                 <video autoPlay muted loop playsInline className="block h-auto w-full">
@@ -178,7 +194,7 @@ export default async function HomePage() {
       <section className="overflow-hidden">
         <div className="grid grid-cols-1 lg:grid-cols-[55%_45%] items-stretch">
 
-          {/* Left — full-bleed doctor image */}
+          {/* Left - full-bleed doctor image */}
           <div className="relative min-h-[380px] lg:min-h-[520px]">
             <Image
               src="https://res.cloudinary.com/dky6bti4g/image/upload/v1755098367/IMG_3348_vnvxge.png"
@@ -212,7 +228,7 @@ export default async function HomePage() {
             </div>
           </div>
 
-          {/* Right — dark navy content panel */}
+          {/* Right - dark navy content panel */}
           <div className="relative flex flex-col justify-between overflow-hidden bg-[#02034a] px-9 py-12 lg:px-12 lg:py-14">
             {/* grid texture */}
             <div
@@ -231,18 +247,18 @@ export default async function HomePage() {
               </span>
 
               <h2 className="mt-4 font-merriweather text-[clamp(28px,3.2vw,44px)] font-black leading-[1.1] tracking-[-0.02em] text-white">
-                Private Testing<br />You Can <span className="text-[#00B4D8]">Trust</span>
+                Private Testing<br />You Can <TealUnderline>Trust</TealUnderline>
               </h2>
 
               <p className="mt-5 font-poppins text-[14px] leading-[1.8] text-[rgba(255,255,255,.62)]">
                 AiwasLabs is Stoke-on-Trent's private blood testing clinic. Every result is personally
-                reviewed by Dr. Tanzil — a GMC-registered physician — before it reaches you.
+                reviewed by Dr. Tanzil - a GMC-registered physician - before it reaches you.
               </p>
 
               <ul className="mt-7 space-y-3">
                 {[
                   'Every result reviewed by a qualified physician',
-                  'No GP referral — book directly online',
+                  'No GP referral - book directly online',
                   'Same-day results for all clinic visits',
                   'UK GDPR compliant · your data stays private',
                 ].map(point => (
@@ -294,6 +310,25 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ── HOW IT WORKS ── */}
+      <section className="border-t border-[#dde4f0] bg-[#F7F6FC] py-16 lg:py-24">
+        <div className="mx-auto max-w-[1320px] px-5">
+          <div className="mb-12 max-w-[580px]">
+            <span className="inline-flex items-center gap-[10px] font-poppins text-[11.5px] font-bold uppercase tracking-[0.18em] text-[#00B4D8] before:inline-block before:h-[2px] before:w-[18px] before:flex-shrink-0 before:bg-[#00B4D8] before:content-['']">
+              How It Works
+            </span>
+            <h2 className="mt-3 font-merriweather text-[clamp(26px,3.4vw,42px)] font-extrabold leading-[1.05] tracking-[-0.02em] text-[#02034a]">
+              From booking to results -{' '}
+              <TealUnderline>five steps, same day.</TealUnderline>
+            </h2>
+            <p className="mt-3 font-poppins text-[14px] leading-[1.65] text-[#6b7280]">
+              No referrals, no chasing. Book online, get tested, and receive a doctor-reviewed report - all on the same day. Scroll to follow the journey.
+            </p>
+          </div>
+          <ProcessFlow />
+        </div>
+      </section>
+
       {/* ── GOOGLE REVIEWS ── */}
       <section className="border-t border-[#dde4f0] bg-white py-14 lg:py-16">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
@@ -302,7 +337,7 @@ export default async function HomePage() {
               Patient Reviews
             </span>
             <h2 className="mt-3 font-merriweather text-[clamp(22px,3vw,36px)] font-extrabold tracking-[-0.02em] text-[#02034a]">
-              What Our Patients Say
+              The Good Doctor
             </h2>
           </div>
           <div className="elfsight-app-0d86ebe1-f76d-4218-a66c-8b22ad5c356c" data-elfsight-app-lazy />
@@ -310,15 +345,80 @@ export default async function HomePage() {
       </section>
       <Script src="https://elfsightcdn.com/platform.js" strategy="lazyOnload" />
 
+      {/* ── HEALTH RESOURCES ── */}
+      <section className="border-t border-[#dde4f0] bg-[#F7F6FC] py-14 lg:py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+
+          {/* Header */}
+          <div className="mb-10 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <span className="inline-flex items-center gap-[10px] font-poppins text-[11.5px] font-bold uppercase tracking-[0.18em] text-[#00B4D8] before:inline-block before:h-[2px] before:w-[18px] before:flex-shrink-0 before:bg-[#00B4D8] before:content-['']">
+                Health Resources
+              </span>
+              <h2 className="mt-2 font-merriweather text-[clamp(22px,3vw,36px)] font-extrabold tracking-[-0.02em] text-[#02034a]">
+                Know your <TealUnderline>biomarkers</TealUnderline>
+              </h2>
+              <p className="mt-2 font-poppins text-[14px] text-[#6b7280]">
+                Evidence-based guides written and reviewed by Dr. Tanzil.
+              </p>
+            </div>
+            <Link
+              href="/resources"
+              className="inline-flex shrink-0 items-center gap-1.5 font-poppins text-[13px] font-semibold text-[#00B4D8] transition hover:text-[#0077b6]"
+            >
+              View all guides
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </Link>
+          </div>
+
+          {/* Article cards */}
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {ARTICLES.slice(0, 3).map(article => (
+              <Link key={article.slug} href={`/resources/${article.slug}`} className="group block">
+                <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-[#dde4f0] bg-white shadow-[0_1px_4px_rgba(2,3,74,.04)] transition hover:shadow-[0_8px_32px_rgba(2,3,74,.10)] hover:-translate-y-0.5">
+                  {/* Accent bar */}
+                  <div className="h-[6px] w-full" style={{ background: article.accent }} />
+
+                  <div className="flex flex-1 flex-col p-5">
+                    {/* Category + biomarker */}
+                    <div className="mb-3 flex items-center gap-2">
+                      <span className="rounded-full bg-[#F7F6FC] px-2.5 py-[3px] font-poppins text-[10px] font-bold uppercase tracking-[0.08em] text-[#6b7280]">
+                        {article.category}
+                      </span>
+                      <span className="font-poppins text-[10px] text-[#6b7280]">·</span>
+                      <span className="font-poppins text-[10px] font-semibold" style={{ color: article.accent }}>
+                        {article.biomarker}
+                      </span>
+                    </div>
+
+                    <h3 className="font-merriweather text-[15px] font-extrabold leading-snug text-[#02034a] line-clamp-2 group-hover:text-[#0077b6] transition-colors">
+                      {article.title}
+                    </h3>
+                    <p className="mt-2 flex-1 font-poppins text-[13px] leading-[1.65] text-[#6b7280] line-clamp-3">
+                      {article.excerpt}
+                    </p>
+
+                    <div className="mt-4 flex items-center justify-between border-t border-[#dde4f0] pt-3">
+                      <span className="font-poppins text-[11px] text-[#9ca3af]">{formatDate(article.date)}</span>
+                      <span className="font-poppins text-[11px] text-[#9ca3af]">{article.readTime}</span>
+                    </div>
+                  </div>
+                </article>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── PAT-06 CTA BANNER ── */}
-      <section className="relative overflow-hidden bg-[linear-gradient(135deg,#00B4D8_0%,#0077b6_100%)] px-10 py-12 text-center sm:px-6">
+      <section className="relative overflow-hidden bg-[linear-gradient(135deg,#011B50_0%,#02034a_60%,#010238_100%)] px-10 py-12 text-center sm:px-6">
         <div className="absolute inset-0 bg-[radial-gradient(60%_80%_at_50%_50%,rgba(255,255,255,.12),transparent_70%)]" />
         <div className="relative z-[2] mx-auto max-w-3xl">
           <h2 className="font-merriweather text-[clamp(24px,4vw,44px)] font-black leading-[1] text-white">
-            Ready to take control of your health?
+            Ready to take control of your <TealUnderline>health?</TealUnderline>
           </h2>
           <p className="mx-auto mt-3 max-w-[480px] font-poppins text-[15px] leading-[1.55] text-[rgba(255,255,255,.85)]">
-            Book a same-day blood test with AiwasLabs — Doctor-Led, private, and reviewed by Dr. Tanzil the same day you come in.
+            Book a same-day blood test with AiwasLabs - Doctor-Led, private, and reviewed by Dr. Tanzil the same day you come in.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link
@@ -345,7 +445,7 @@ export default async function HomePage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-10 lg:grid-cols-[1fr_1fr] items-center">
 
-            {/* Left — info */}
+            {/* Left - info */}
             <div>
               <span className="inline-flex items-center gap-[10px] font-poppins text-[11.5px] font-bold uppercase tracking-[0.18em] text-[#00B4D8] before:inline-block before:h-[2px] before:w-[18px] before:flex-shrink-0 before:bg-[#00B4D8] before:content-['']">
                 Find Us
@@ -355,7 +455,7 @@ export default async function HomePage() {
               </h2>
               <p className="mt-3 max-w-[460px] font-poppins text-[14px] leading-[1.7] text-[#6b7280]">
                 AiwasLabs is a private blood testing clinic conveniently located in Stoke-on-Trent.
-                Walk-in and pre-booked appointments available — no GP referral needed.
+                Walk-in and pre-booked appointments available - no GP referral needed.
               </p>
 
               <div className="mt-8 space-y-4">
@@ -373,7 +473,7 @@ export default async function HomePage() {
                   {
                     icon: <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />,
                     label: 'No GP Referral',
-                    text: 'Book directly — we see you the same day',
+                    text: 'Book directly - we see you the same day',
                   },
                 ].map(({ icon, label, text }) => (
                   <div key={label} className="flex items-start gap-4">
@@ -408,7 +508,7 @@ export default async function HomePage() {
               </div>
             </div>
 
-            {/* Right — embedded Google Map */}
+            {/* Right - embedded Google Map */}
             <div className="overflow-hidden rounded-2xl border border-[#dde4f0] bg-white shadow-[0_4px_24px_rgba(2,3,74,.08)]">
               <div className="h-[340px] w-full">
                 <iframe

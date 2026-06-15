@@ -1,8 +1,21 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
 import { query } from '@/lib/db'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+
+export const metadata: Metadata = {
+  title: 'Blood Tests & Home Kits',
+  description: 'Browse our full range of private blood tests - cholesterol, hormones, diabetes, vitamins, thyroid and more. Clinic appointments in Stoke-on-Trent or home kits delivered to your door.',
+  alternates: { canonical: 'https://aiwaslabs.co.uk/products' },
+  openGraph: {
+    type: 'website',
+    url: 'https://aiwaslabs.co.uk/products',
+    title: 'Blood Tests & Home Kits | AiwasLabs',
+    description: 'Private blood tests with same-day results. Clinic or home kit. No GP referral needed.',
+  },
+}
 
 async function getProducts(category?: string) {
   let sql = `
@@ -55,20 +68,43 @@ export default async function ProductsPage({
 
   const activeCategory = categories.find(c => c.slug === category)
 
+  const itemListSchema = products.length > 0 ? {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: activeCategory ? `${activeCategory.name} Blood Tests - AiwasLabs` : 'Blood Tests Available at AiwasLabs',
+    url: `https://aiwaslabs.co.uk/products${category ? `?category=${category}` : ''}`,
+    numberOfItems: products.length,
+    itemListElement: products.map((p, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      url: `https://aiwaslabs.co.uk/products/${p.slug}`,
+      name: p.title,
+    })),
+  } : null
+
   return (
-    <main className="flex flex-col min-h-screen">
+    <>
+      {itemListSchema && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
+      )}
+      <main className="flex flex-col min-h-screen">
       <Navbar />
 
       {/* Header */}
-      <section className="border-b border-[#dde4f0] bg-[#F7F6FC]">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+      <section className="relative overflow-hidden bg-[linear-gradient(135deg,#011B50_0%,#02034a_55%,#010238_100%)]">
+        <div
+          className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.025)_1px,transparent_1px)] bg-[size:52px_52px]"
+          style={{ maskImage: 'radial-gradient(80% 100% at 50% 0%, #000, transparent)', WebkitMaskImage: 'radial-gradient(80% 100% at 50% 0%, #000, transparent)' }}
+        />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_120%_at_80%_50%,rgba(0,180,216,.15),transparent_70%)]" />
+        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 pb-14">
           <span className="inline-flex items-center gap-[10px] font-poppins text-[11.5px] font-bold uppercase tracking-[0.18em] text-[#00B4D8] before:inline-block before:h-[2px] before:w-[18px] before:flex-shrink-0 before:bg-[#00B4D8] before:content-['']">
             Private Blood Testing
           </span>
-          <h1 className="mt-2 font-merriweather text-[clamp(24px,4vw,42px)] font-extrabold tracking-[-0.02em] text-[#02034a]">
+          <h1 className="mt-2 font-merriweather text-[clamp(24px,4vw,42px)] font-extrabold tracking-[-0.02em] text-white">
             {activeCategory ? activeCategory.name : 'All Blood Tests'}
           </h1>
-          <p className="mt-2 font-poppins text-[14px] text-[#6b7280]">
+          <p className="mt-2 font-poppins text-[14px] text-white/55">
             {activeCategory
               ? `Showing ${products.length} test${products.length !== 1 ? 's' : ''} in ${activeCategory.name}`
               : `${products.length} test${products.length !== 1 ? 's' : ''} available · Same-day results · No GP referral needed`}
@@ -146,6 +182,7 @@ export default async function ProductsPage({
 
       <Footer />
     </main>
+    </>
   )
 }
 

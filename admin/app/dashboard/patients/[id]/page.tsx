@@ -2,14 +2,27 @@ import { notFound } from 'next/navigation'
 import { query } from '@/lib/db'
 
 const STATUS_STYLE: Record<string, string> = {
-  pending:   'bg-amber-50 text-amber-600',
-  confirmed: 'bg-[rgba(0,180,216,.08)] text-[#0077b6]',
-  completed: 'bg-[rgba(13,171,118,.08)] text-[#0DAB76]',
-  cancelled: 'bg-red-50 text-red-400',
+  pending:        'bg-amber-50 text-amber-600',
+  confirmed:      'bg-[rgba(0,180,216,.08)] text-[#0077b6]',
+  completed:      'bg-[rgba(13,171,118,.08)] text-[#0DAB76]',
+  cancelled:      'bg-red-50 text-red-400',
+  submitted:      'bg-[rgba(0,180,216,.08)] text-[#0077b6]',
+  kit_dispatched: 'bg-[rgba(13,171,118,.08)] text-[#0DAB76]',
+  sample_received:'bg-[rgba(0,180,216,.08)] text-[#0077b6]',
+  results_ready:  'bg-[rgba(13,171,118,.08)] text-[#0DAB76]',
+}
+
+const INUVI_STATUS_LABEL: Record<string, string> = {
+  pending:        'Pending',
+  submitted:      'Submitted to Inuvi',
+  kit_dispatched: 'Kit Dispatched',
+  sample_received:'Sample Received',
+  results_ready:  'Results Ready',
+  cancelled:      'Cancelled',
 }
 
 async function getData(id: string) {
-  const [patients, bookings, reports] = await Promise.all([
+  const [patients, bookings, reports, inuviOrders] = await Promise.all([
     query<{
       id: string
       first_name: string
@@ -49,9 +62,25 @@ async function getData(id: string) {
       WHERE r.patient_id = $1
       ORDER BY r.sample_date DESC
     `, [id]),
+
+    query<{
+      id: string
+      status: string
+      inuvi_status_raw: string | null
+      delivery_address: string
+      product_title: string
+      created_at: string
+    }>(`
+      SELECT io.id, io.status, io.inuvi_status_raw, io.delivery_address, io.created_at,
+             p.title AS product_title
+      FROM inuvi_orders io
+      JOIN products p ON p.id = io.product_id
+      WHERE io.patient_id = $1
+      ORDER BY io.created_at DESC
+    `, [id]).catch(() => []),
   ])
 
-  return { patient: patients[0] ?? null, bookings, reports }
+  return { patient: patients[0] ?? null, bookings, reports, inuviOrders }
 }
 
 function InfoRow({ label, value }: { label: string; value: string }) {
@@ -65,7 +94,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 export default async function PatientDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const { patient, bookings, reports } = await getData(id)
+  const { patient, bookings, reports, inuviOrders } = await getData(id)
 
   if (!patient) notFound()
 
@@ -165,6 +194,48 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
             )}
           </div>
 
+          {/* Inuvi Home Kit Orders */}
+          {inuviOrders.length > 0 && (
+            <div className="rounded-2xl border border-[#dde4f0] bg-white shadow-[0_1px_3px_rgba(2,3,74,.06)] overflow-hidden">
+              <div className="flex items-center justify-between border-b border-[#dde4f0] px-5 py-4">
+                <div className="flex items-center gap-2">
+                  <p className="font-poppins text-[12px] font-bold uppercase tracking-[0.12em] text-[#02034a]">Inuvi Home Kit Orders</p>
+                  <span className="rounded-full bg-[rgba(0,180,216,.08)] px-2 py-0.5 font-poppins text-[10px] font-bold text-[#0077b6]">{inuviOrders.length}</span>
+                </div>
+              </div>
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-[#f8faff]">
+                    {['Date', 'Test', 'Status', 'Delivery Address'].map(h => (
+                      <th key={h} className="px-4 py-2.5 text-left font-poppins text-[10px] font-bold uppercase tracking-[0.1em] text-[#6b7280]">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#f3f4f6]">
+                  {inuviOrders.map(o => (
+                    <tr key={o.id} className="hover:bg-[#fafbff]">
+                      <td className="px-4 py-3 font-poppins text-[12.5px] text-[#02034a] whitespace-nowrap">
+                        {new Date(o.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </td>
+                      <td className="px-4 py-3 font-poppins text-[12.5px] text-[#02034a]">{o.product_title}</td>
+                      <td className="px-4 py-3">
+                        <span className={`rounded-full px-2.5 py-[3px] font-poppins text-[10px] font-bold uppercase tracking-[0.06em] ${STATUS_STYLE[o.status] ?? 'bg-[#f3f4f6] text-[#6b7280]'}`}>
+                          {INUVI_STATUS_LABEL[o.status] ?? o.status}
+                        </span>
+                        {o.inuvi_status_raw && o.inuvi_status_raw !== o.status && (
+                          <p className="mt-0.5 font-poppins text-[10px] text-[#b0b8c8]">{o.inuvi_status_raw}</p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 font-poppins text-[12px] text-[#6b7280] max-w-[200px] truncate" title={o.delivery_address}>
+                        {o.delivery_address}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
           {/* Reports */}
           <div className="rounded-2xl border border-[#dde4f0] bg-white shadow-[0_1px_3px_rgba(2,3,74,.06)] overflow-hidden">
             <div className="flex items-center justify-between border-b border-[#dde4f0] px-5 py-4">
@@ -186,7 +257,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                   {reports.map(r => (
                     <tr key={r.id} className="hover:bg-[#fafbff]">
                       <td className="px-4 py-3 font-poppins text-[12.5px] text-[#02034a] whitespace-nowrap">
-                        {new Date(r.sample_date + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {r.sample_date ? new Date(r.sample_date + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                       </td>
                       <td className="px-4 py-3 font-poppins text-[12.5px] text-[#02034a]">{r.product_title}</td>
                       <td className="px-4 py-3">

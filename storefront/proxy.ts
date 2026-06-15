@@ -4,7 +4,8 @@ import { verifyToken } from '@/lib/auth'
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl
 
-  if (pathname.startsWith('/account') && !pathname.startsWith('/account/login')) {
+  const publicAccountRoutes = ['/account/login', '/account/forgot-password', '/account/reset-password']
+  if (pathname.startsWith('/account') && !publicAccountRoutes.some(r => pathname.startsWith(r))) {
     const token = req.cookies.get('patient_token')?.value
     if (!token || !verifyToken(token)) {
       const loginUrl = new URL('/account/login', req.url)

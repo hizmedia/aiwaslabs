@@ -1,4 +1,7 @@
-import { Pool } from 'pg'
+import { Pool, types } from 'pg'
+
+// Return DATE columns as "YYYY-MM-DD" strings so downstream code can safely append 'T12:00:00'
+types.setTypeParser(1082, (val) => val)
 
 const globalForPg = globalThis as unknown as { pool: Pool }
 

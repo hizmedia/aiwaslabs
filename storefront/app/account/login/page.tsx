@@ -8,7 +8,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 export default function PatientLoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const from = searchParams.get('from') ?? '/account'
+  const from       = searchParams.get('from') ?? '/account'
+  const resetDone  = searchParams.get('reset') === 'success'
 
   const [tab, setTab]           = useState<'login' | 'register'>('login')
   const [loading, setLoading]   = useState(false)
@@ -24,6 +25,13 @@ export default function PatientLoginPage() {
   const [regEmail, setRegEmail]     = useState('')
   const [regPassword, setRegPassword] = useState('')
   const [regConfirm, setRegConfirm] = useState('')
+
+  // Register consent
+  const [consentTerms,     setConsentTerms]     = useState(false)
+  const [consentData,      setConsentData]       = useState(false)
+  const [consentAge,       setConsentAge]        = useState(false)
+  const [consentMarketing, setConsentMarketing]  = useState(false)
+  const [consentErrors,    setConsentErrors]     = useState<Record<string, boolean>>({})
 
   useEffect(() => { setError('') }, [tab])
 
@@ -51,6 +59,14 @@ export default function PatientLoginPage() {
     setError('')
     if (regPassword !== regConfirm) { setError('Passwords do not match'); return }
     if (regPassword.length < 8) { setError('Password must be at least 8 characters'); return }
+
+    const ce: Record<string, boolean> = {}
+    if (!consentTerms) ce.terms = true
+    if (!consentData)  ce.data  = true
+    if (!consentAge)   ce.age   = true
+    setConsentErrors(ce)
+    if (Object.keys(ce).length) return
+
     setLoading(true)
     const res = await fetch('/api/auth/register', {
       method: 'POST',
@@ -101,6 +117,13 @@ export default function PatientLoginPage() {
             </p>
           </div>
 
+          {resetDone && (
+            <div className="mb-4 flex items-center gap-3 rounded-[10px] border border-green-200 bg-green-50 px-4 py-3">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              <p className="font-poppins text-[13px] text-green-700">Password updated - you can now sign in with your new password.</p>
+            </div>
+          )}
+
           <div className="overflow-hidden rounded-2xl border border-[#dde4f0] bg-white shadow-[0_4px_20px_rgba(2,3,74,.08)]">
             {/* Tabs */}
             <div className="flex border-b border-[#dde4f0]">
@@ -139,7 +162,12 @@ export default function PatientLoginPage() {
                     />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="font-poppins text-[11px] font-bold uppercase tracking-[0.1em] text-[#02034a]">Password</label>
+                    <div className="flex items-center justify-between">
+                      <label className="font-poppins text-[11px] font-bold uppercase tracking-[0.1em] text-[#02034a]">Password</label>
+                      <Link href="/account/forgot-password" className="font-poppins text-[11px] text-[#00B4D8] hover:text-[#0077b6] transition">
+                        Forgot password?
+                      </Link>
+                    </div>
                     <input
                       type="password" required value={loginPassword}
                       onChange={e => setLoginPassword(e.target.value)}
@@ -186,6 +214,60 @@ export default function PatientLoginPage() {
                     <input type="password" required value={regConfirm} onChange={e => setRegConfirm(e.target.value)}
                       placeholder="••••••••" className={inputCls} />
                   </div>
+                  {/* ── Consent checkboxes ── */}
+                  <div className="flex flex-col gap-2.5 rounded-xl border border-[#dde4f0] bg-[#F7F6FC] p-4">
+                    <p className="font-poppins text-[10.5px] font-bold uppercase tracking-[0.12em] text-[#9ca3af]">Agreements &amp; Consent</p>
+                    {([
+                      {
+                        key: 'terms', state: consentTerms, set: setConsentTerms, required: true,
+                        label: <>I have read and agree to the{' '}
+                          <a href="/terms" target="_blank" className="text-[#00B4D8] underline hover:text-[#0077b6]">Terms of Service</a>
+                          {' '}and{' '}
+                          <a href="/privacy" target="_blank" className="text-[#00B4D8] underline hover:text-[#0077b6]">Privacy Policy</a>
+                        </>,
+                      },
+                      {
+                        key: 'data', state: consentData, set: setConsentData, required: true,
+                        label: 'I consent to AiwasLabs processing my health and test result data for the purpose of providing diagnostic testing services, as described in the Privacy Policy (UK GDPR Article 9)',
+                      },
+                      {
+                        key: 'age', state: consentAge, set: setConsentAge, required: true,
+                        label: 'I confirm I am 18 years of age or older (or have parental/guardian consent)',
+                      },
+                      {
+                        key: 'marketing', state: consentMarketing, set: setConsentMarketing, required: false,
+                        label: 'I would like to receive health tips and offers from AiwasLabs by email (optional)',
+                      },
+                    ] as const).map(({ key, state, set, required, label }) => (
+                      <label key={key} className={`flex items-start gap-3 cursor-pointer ${consentErrors[key] ? 'opacity-100' : ''}`}>
+                        <span className="relative mt-[2px] flex-shrink-0">
+                          <input
+                            type="checkbox" checked={state}
+                            onChange={e => { set(e.target.checked); setConsentErrors(ce => ({ ...ce, [key]: false })) }}
+                            className="sr-only"
+                          />
+                          <span className={`flex h-5 w-5 items-center justify-center rounded border-2 transition-colors ${
+                            state
+                              ? 'border-[#02034a] bg-[#02034a]'
+                              : consentErrors[key]
+                              ? 'border-red-400 bg-white'
+                              : 'border-[#dde4f0] bg-white'
+                          }`}>
+                            {state && (
+                              <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
+                                <path d="M1 4.5L4 7.5L10 1.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            )}
+                          </span>
+                        </span>
+                        <span className={`font-poppins text-[12px] leading-[1.5] ${consentErrors[key] ? 'text-red-600' : 'text-[#374151]'}`}>
+                          {label}
+                          {required && <span className="ml-1 text-red-400">*</span>}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+
                   <button type="submit" disabled={loading}
                     className="mt-2 w-full rounded-full bg-[#02034a] py-3.5 font-poppins text-[14px] font-bold text-white shadow-[0_4px_14px_rgba(2,3,74,.25)] transition hover:bg-[#0077b6] disabled:opacity-60"
                   >

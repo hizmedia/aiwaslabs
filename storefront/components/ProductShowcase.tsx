@@ -116,7 +116,7 @@ export default function ProductShowcase({
             Choose the right panel for you.
           </h2>
           <p className="mt-2 max-w-[560px] font-poppins text-[14px] leading-[1.55] text-[#6b7280]">
-            Select a category below — each card shows biomarkers, a description, and price. No referral needed.
+            Select a category below - each card shows biomarkers, a description, and price. No referral needed.
           </p>
         </div>
 
@@ -231,7 +231,7 @@ export default function ProductShowcase({
         {/* Footer hint */}
         <div className="mt-2 border-t border-[#dde4f0] pt-4">
           <p className="font-poppins text-[11.5px] text-[#6b7280]">
-            All results reviewed by Dr. Tanzil — a qualified GMC-registered physician. Same-day delivery guaranteed.
+            All results reviewed by Dr. Tanzil - a qualified GMC-registered physician. Same-day delivery guaranteed.
           </p>
         </div>
       </div>

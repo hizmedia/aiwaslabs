@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import { getPatientSession } from '@/lib/auth'
+import { sendBookingConfirmation, sendDoctorBookingAlert } from '@/lib/email'
 
 export async function GET() {
   const session = await getPatientSession()
@@ -75,12 +76,32 @@ export async function POST(req: NextRequest) {
     patientId = newPatient.id
   }
 
-  const [booking] = await query<{ id: string }>(
-    `INSERT INTO bookings (patient_id, product_id, booking_date, booking_time, booking_type, notes)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     RETURNING id`,
-    [patientId, product_id, booking_date, booking_time, booking_type, sanitized.notes]
-  )
+  const [[booking], [product]] = await Promise.all([
+    query<{ id: string }>(
+      `INSERT INTO bookings (patient_id, product_id, booking_date, booking_time, booking_type, notes)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id`,
+      [patientId, product_id, booking_date, booking_time, booking_type, sanitized.notes]
+    ),
+    query<{ title: string }>(`SELECT title FROM products WHERE id = $1`, [product_id]),
+  ])
+
+  const emailPayload = {
+    firstName: sanitized.first_name,
+    lastName: sanitized.last_name,
+    email: sanitized.email,
+    phone: sanitized.phone,
+    productTitle: product?.title ?? 'Blood Test',
+    bookingDate: booking_date,
+    bookingTime: booking_time,
+    bookingType: booking_type,
+    bookingId: booking.id,
+  }
+
+  await Promise.all([
+    sendBookingConfirmation(emailPayload),
+    sendDoctorBookingAlert(emailPayload),
+  ])
 
   return NextResponse.json({ id: booking.id }, { status: 201 })
 }

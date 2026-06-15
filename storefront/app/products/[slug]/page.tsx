@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -48,6 +49,59 @@ async function getRelatedProducts(slug: string, categoryTags: string[]) {
   `, [slug, categoryTags])
 }
 
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
+  const product = await getProduct(slug)
+  if (!product) return {}
+
+  const description = product.description
+    ? product.description.replace(/<[^>]+>/g, '').slice(0, 160)
+    : `Private ${product.title} blood test in Stoke-on-Trent. Same-day results reviewed by a GMC-registered doctor.`
+
+  const image = product.images?.[0]
+  const pageUrl = `https://aiwaslabs.co.uk/products/${slug}`
+
+  const productSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.title,
+    description,
+    image: image ? [image] : undefined,
+    url: pageUrl,
+    brand: { '@type': 'Brand', name: 'AiwasLabs' },
+    offers: {
+      '@type': 'Offer',
+      price: product.price,
+      priceCurrency: 'GBP',
+      availability: 'https://schema.org/InStock',
+      seller: { '@type': 'Organization', name: 'AiwasLabs' },
+      url: pageUrl,
+    },
+  }
+
+  return {
+    title: product.title,
+    description,
+    alternates: { canonical: pageUrl },
+    openGraph: {
+      type: 'website',
+      url: pageUrl,
+      title: `${product.title} | AiwasLabs`,
+      description,
+      images: image ? [{ url: image, alt: product.title }] : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${product.title} | AiwasLabs`,
+      description,
+      images: image ? [image] : undefined,
+    },
+    other: {
+      'script:ld+json': JSON.stringify(productSchema),
+    },
+  }
+}
+
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const product = await getProduct(slug)
@@ -57,8 +111,34 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const heroImage = product.images?.[0]
   const typeLabel = { booking: 'Clinic Visit', ship: 'Home Kit', both: 'Clinic + Home Kit' }[product.product_type]
 
+  const validFaqs = product.faqs?.filter(f => f.question && f.answer) ?? []
+  const faqSchema = validFaqs.length > 0 ? {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: validFaqs.map(f => ({
+      '@type': 'Question',
+      name: f.question,
+      acceptedAnswer: { '@type': 'Answer', text: f.answer.replace(/<[^>]+>/g, '') },
+    })),
+  } : null
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://aiwaslabs.co.uk' },
+      { '@type': 'ListItem', position: 2, name: 'Blood Tests', item: 'https://aiwaslabs.co.uk/products' },
+      { '@type': 'ListItem', position: 3, name: product.title, item: `https://aiwaslabs.co.uk/products/${slug}` },
+    ],
+  }
+
   return (
-    <main className="flex flex-col min-h-screen bg-white">
+    <>
+      {faqSchema && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      )}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+      <main className="flex flex-col min-h-screen bg-white">
       <Navbar />
 
       {/* ── HERO ── */}
@@ -135,7 +215,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               )}
             </div>
 
-            {/* Right — Image */}
+            {/* Right - Image */}
             <div className="order-1 lg:order-2 relative">
               <div className="pointer-events-none absolute inset-0 rounded-3xl bg-[#00B4D8] opacity-[0.12] blur-[70px]" />
               <div className="relative rounded-3xl overflow-hidden border border-white/10 shadow-[0_28px_64px_rgba(0,0,0,.4)]">
@@ -188,7 +268,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
           {product.product_type === 'both' ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-stretch">
-              {/* Left — Clinic booking */}
+              {/* Left - Clinic booking */}
               <div className="flex flex-col">
                 <div className="mb-5">
                   <span className="inline-flex items-center gap-[10px] font-poppins text-[11.5px] font-bold uppercase tracking-[0.18em] text-[#00B4D8] before:inline-block before:h-[2px] before:w-[18px] before:flex-shrink-0 before:bg-[#00B4D8] before:content-['']">
@@ -202,7 +282,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 </div>
               </div>
 
-              {/* Right — Home kit */}
+              {/* Right - Home kit */}
               <div className="flex flex-col">
                 <div className="mb-5">
                   <span className="inline-flex items-center gap-[10px] font-poppins text-[11.5px] font-bold uppercase tracking-[0.18em] text-[#00B4D8] before:inline-block before:h-[2px] before:w-[18px] before:flex-shrink-0 before:bg-[#00B4D8] before:content-['']">
@@ -244,7 +324,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <em className="not-italic text-[#00B4D8]">Made Personal</em>
             </h2>
             <p className="mt-4 font-poppins text-[15px] leading-[1.7] text-white/70">
-              Every result is reviewed and signed off by Dr. Tanzil — a GMC-registered physician. You'll receive a personalised report with clear next steps the same day.
+              Every result is reviewed and signed off by Dr. Tanzil - a GMC-registered physician. You'll receive a personalised report with clear next steps the same day.
             </p>
             <ul className="mt-5 space-y-2.5">
               {[
@@ -336,5 +416,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
       <Footer />
     </main>
+    </>
   )
 }

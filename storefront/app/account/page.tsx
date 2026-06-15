@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
-type Session = { id: string; email: string; first_name: string; last_name: string }
+type Session = { id: string; email: string; first_name: string; last_name: string; email_verified: boolean }
 
 type Booking = {
   id: string
@@ -30,7 +30,17 @@ type CartItem = {
   created_at: string
 }
 
-type Tab = 'bookings' | 'cart' | 'account'
+type Tab = 'bookings' | 'reports' | 'cart' | 'account'
+
+type Report = {
+  id: string
+  sample_date: string
+  status: string
+  created_at: string
+  biomarker_count: number
+  product_title: string
+  product_slug: string
+}
 
 const STATUS_STYLE: Record<string, string> = {
   pending:   'bg-amber-50 text-amber-600',
@@ -41,12 +51,19 @@ const STATUS_STYLE: Record<string, string> = {
 
 export default function AccountDashboard() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const initialTab = (searchParams.get('tab') as Tab) ?? 'bookings'
   const [session, setSession]   = useState<Session | null>(null)
-  const [tab, setTab]           = useState<Tab>('bookings')
+  const [tab, setTab]           = useState<Tab>(initialTab)
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [reports, setReports]   = useState<Report[]>([])
   const [cart, setCart]         = useState<CartItem[]>([])
   const [loadingBookings, setLoadingBookings] = useState(true)
+  const [loadingReports, setLoadingReports]   = useState(true)
   const [loadingCart, setLoadingCart]         = useState(true)
+  const [resendSent, setResendSent]           = useState(false)
+  const [resendLoading, setResendLoading]     = useState(false)
+  const verifyParam = searchParams.get('verify')
 
   useEffect(() => {
     fetch('/api/auth/me').then(r => r.json()).then(data => {
@@ -62,6 +79,13 @@ export default function AccountDashboard() {
     }).finally(() => setLoadingBookings(false))
   }, [])
 
+  const fetchReports = useCallback(() => {
+    setLoadingReports(true)
+    fetch('/api/reports').then(r => r.json()).then(data => {
+      setReports(Array.isArray(data) ? data : [])
+    }).finally(() => setLoadingReports(false))
+  }, [])
+
   const fetchCart = useCallback(() => {
     setLoadingCart(true)
     fetch('/api/cart').then(r => r.json()).then(data => {
@@ -70,11 +94,19 @@ export default function AccountDashboard() {
   }, [])
 
   useEffect(() => { fetchBookings() }, [fetchBookings])
+  useEffect(() => { fetchReports() }, [fetchReports])
   useEffect(() => { fetchCart() }, [fetchCart])
 
   async function removeFromCart(id: string) {
     await fetch(`/api/cart/${id}`, { method: 'DELETE' })
     setCart(prev => prev.filter(i => i.id !== id))
+  }
+
+  async function handleResendVerification() {
+    setResendLoading(true)
+    await fetch('/api/auth/resend-verification', { method: 'POST' })
+    setResendLoading(false)
+    setResendSent(true)
   }
 
   async function handleLogout() {
@@ -98,6 +130,11 @@ export default function AccountDashboard() {
       key: 'bookings', label: 'Bookings',
       icon: 'M8 2v4M16 2v4M3 10h18M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z',
       count: bookings.length || undefined,
+    },
+    {
+      key: 'reports', label: 'Reports',
+      icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8',
+      count: reports.length || undefined,
     },
     {
       key: 'cart', label: 'Cart',
@@ -155,6 +192,33 @@ export default function AccountDashboard() {
               </button>
             </div>
           </div>
+
+          {/* Email verified success banner */}
+          {verifyParam === 'success' && (
+            <div className="mb-4 flex items-center gap-3 rounded-xl border border-[#0DAB76]/30 bg-[rgba(13,171,118,.08)] px-4 py-3">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0DAB76" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              <p className="font-poppins text-[13px] font-semibold text-[#0DAB76]">Your email has been verified. Your account is fully activated.</p>
+            </div>
+          )}
+
+          {/* Email verification banner */}
+          {!session.email_verified && verifyParam !== 'success' && (
+            <div className="mb-4 flex flex-col gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <svg className="mt-0.5 shrink-0" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <p className="font-poppins text-[13px] text-amber-800">
+                  Please verify your email address. Check your inbox for a verification link.
+                </p>
+              </div>
+              <button
+                onClick={handleResendVerification}
+                disabled={resendLoading || resendSent}
+                className="shrink-0 rounded-lg border border-amber-300 bg-white px-3 py-1.5 font-poppins text-[12px] font-semibold text-amber-700 transition hover:bg-amber-100 disabled:opacity-60"
+              >
+                {resendSent ? 'Email sent ✓' : resendLoading ? 'Sending…' : 'Resend email'}
+              </button>
+            </div>
+          )}
 
           {/* Tabs */}
           <div className="mb-4 flex gap-1 rounded-[14px] border border-[#dde4f0] bg-white p-1 shadow-[0_2px_8px_rgba(2,3,74,.05)]">
@@ -240,6 +304,60 @@ export default function AccountDashboard() {
                             View test
                           </Link>
                         </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── REPORTS ── */}
+          {tab === 'reports' && (
+            <div className="overflow-hidden rounded-2xl border border-[#dde4f0] bg-white shadow-[0_4px_18px_rgba(2,3,74,.06)]">
+              <div className="border-b border-[#dde4f0] bg-[#F7F6FC] px-5 py-3">
+                <span className="font-poppins text-[11px] font-bold uppercase tracking-[0.14em] text-[#02034a]">My Reports</span>
+              </div>
+
+              {loadingReports ? (
+                <div className="flex items-center justify-center py-16">
+                  <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#00B4D8] border-t-transparent" />
+                </div>
+              ) : reports.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 py-16 text-center">
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#dde4f0" strokeWidth="1.5" strokeLinecap="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                  </svg>
+                  <p className="font-poppins text-[13px] text-[#6b7280]">No reports available yet</p>
+                  <p className="font-poppins text-[11.5px] text-[#6b7280]">Your results will appear here once your doctor has finalised them.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-[#dde4f0]">
+                  {reports.map(r => {
+                    const dateObj  = r.sample_date ? new Date(r.sample_date + 'T12:00:00') : null
+                    const dayNum   = dateObj ? dateObj.toLocaleDateString('en-GB', { day: '2-digit' }) : '-'
+                    const month    = dateObj ? dateObj.toLocaleDateString('en-GB', { month: 'short' }).toUpperCase() : ''
+                    const year     = dateObj ? dateObj.getFullYear() : ''
+
+                    return (
+                      <div key={r.id} className="flex flex-wrap items-center gap-4 px-5 py-4">
+                        <div className="flex h-12 w-12 flex-shrink-0 flex-col items-center justify-center rounded-[10px] bg-[#02034a]">
+                          <span className="font-jetbrains text-[8px] font-bold text-white/40">{month}</span>
+                          <span className="font-jetbrains text-[15px] font-bold leading-none text-[#00B4D8]">{dayNum}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-merriweather text-[14px] font-extrabold text-[#02034a] truncate">{r.product_title}</p>
+                          <p className="font-poppins text-[11.5px] text-[#6b7280]">
+                            Sample: {dayNum} {month} {year} · {r.biomarker_count} biomarkers
+                          </p>
+                        </div>
+                        <Link
+                          href={`/account/reports/${r.id}`}
+                          className="flex-shrink-0 rounded-full bg-[#02034a] px-4 py-[7px] font-poppins text-[11.5px] font-bold text-white transition hover:bg-[#00B4D8]"
+                        >
+                          View Report
+                        </Link>
                       </div>
                     )
                   })}

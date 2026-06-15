@@ -28,6 +28,33 @@ export default function Footer() {
               </span>
             ))}
           </div>
+
+          <div className="mt-5 flex gap-3">
+            <a
+              href="https://www.instagram.com/aiwaslabs/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="AiwasLabs on Instagram"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/5 text-white/60 transition hover:border-[#00B4D8] hover:bg-[#00B4D8]/10 hover:text-[#00B4D8]"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                <circle cx="12" cy="12" r="4"/>
+                <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/>
+              </svg>
+            </a>
+            <a
+              href="https://www.facebook.com/profile.php?id=61578599641656"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="AiwasLabs on Facebook"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/5 text-white/60 transition hover:border-[#00B4D8] hover:bg-[#00B4D8]/10 hover:text-[#00B4D8]"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+              </svg>
+            </a>
+          </div>
         </div>
 
         {/* Services */}

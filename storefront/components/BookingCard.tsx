@@ -1,29 +1,33 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
-function generateTimeSlots(dateString: string): string[] {
+interface TimeSlot {
+  display: string  // e.g. "6:00 pm"
+  value: string    // e.g. "18:00"
+  booked: boolean
+}
+
+function generateTimeSlots(dateString: string): TimeSlot[] {
   if (!dateString) return []
-  const date = new Date(dateString)
+  const date = new Date(dateString + 'T12:00:00')
   const day = date.getDay()
   const startHour = day === 0 || day === 6 ? 9 : 18
-  const slots: string[] = []
+  const slots: TimeSlot[] = []
   for (let h = startHour; h < 21; h++) {
     for (const m of [0, 30]) {
-      const t = new Date(date)
-      t.setHours(h, m, 0, 0)
-      slots.push(
-        t.toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit', hour12: true })
-      )
+      const hh = String(h).padStart(2, '0')
+      const mm = String(m).padStart(2, '0')
+      const value = `${hh}:${mm}`
+      const ampm = h >= 12 ? 'pm' : 'am'
+      const h12 = h % 12 || 12
+      const display = `${h12}:${mm} ${ampm}`
+      slots.push({ display, value, booked: false })
     }
   }
   return slots
 }
 
-function timeDisplayToValue(display: string): string {
-  const d = new Date(`1970-01-01 ${display}`)
-  return d.toTimeString().slice(0, 5)
-}
 
 function ToggleRow({
   label, price, desc, active, onToggle,
@@ -79,13 +83,33 @@ export default function BookingCard({
   const [preferredTime, setPreferredTime] = useState('')
   const [showTimeDropdown, setShowTimeDropdown] = useState(false)
 
+  const [consentTerms,   setConsentTerms]   = useState(false)
+  const [consentMedical, setConsentMedical] = useState(false)
+  const [consentData,    setConsentData]    = useState(false)
+  const [consentAge,     setConsentAge]     = useState(false)
+
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [status, setStatus] = useState<Status>('idle')
   const [bookingId, setBookingId] = useState<string | null>(null)
 
   const today = new Date().toISOString().split('T')[0]
-  const timeSlots = generateTimeSlots(preferredDate)
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([])
+  const [loadingSlots, setLoadingSlots] = useState(false)
   const timeDisplayRef = useRef('')
+
+  useEffect(() => {
+    if (!preferredDate) { setTimeSlots([]); return }
+    const base = generateTimeSlots(preferredDate)
+    setTimeSlots(base)
+    setLoadingSlots(true)
+    fetch(`/api/availability?date=${preferredDate}`)
+      .then(r => r.json())
+      .then(({ booked }: { booked: string[] }) => {
+        setTimeSlots(base.map(s => ({ ...s, booked: booked.includes(s.value) })))
+      })
+      .catch(() => {})
+      .finally(() => setLoadingSlots(false))
+  }, [preferredDate])
 
   const validate = () => {
     const next: Record<string, string> = {}
@@ -95,6 +119,10 @@ export default function BookingCard({
     if (!phone.trim()) next.phone = 'Required'
     if (!preferredDate) next.date = 'Please choose a date'
     if (!preferredTime) next.time = 'Please choose a time'
+    if (!consentTerms)   next.consentTerms   = 'Required'
+    if (!consentMedical) next.consentMedical = 'Required'
+    if (!consentData)    next.consentData    = 'Required'
+    if (!consentAge)     next.consentAge     = 'Required'
     setErrors(next)
     return Object.keys(next).length === 0
   }
@@ -120,7 +148,7 @@ export default function BookingCard({
           phone: phone.trim(),
           product_id: productId,
           booking_date: preferredDate,
-          booking_time: timeDisplayToValue(timeDisplayRef.current),
+          booking_time: preferredTime,
           booking_type: selectedService,
           notes: buildNotes(),
         }),
@@ -295,23 +323,85 @@ export default function BookingCard({
             </button>
             {showTimeDropdown && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-xl z-20 border border-[#dde4f0] max-h-44 overflow-y-auto">
-                {timeSlots.map(time => (
-                  <button key={time} type="button"
-                    onClick={() => {
-                      setPreferredTime(time)
-                      timeDisplayRef.current = time
-                      setShowTimeDropdown(false)
-                      setErrors(er => ({ ...er, time: '' }))
-                    }}
-                    className="w-full text-left px-4 py-2.5 font-poppins text-[13px] text-[#02034a] hover:bg-[#F7F6FC] first:rounded-t-xl last:rounded-b-xl transition-colors"
-                  >
-                    {time}
-                  </button>
-                ))}
+                {loadingSlots ? (
+                  <div className="flex items-center justify-center py-4">
+                    <svg className="animate-spin h-4 w-4 text-[#00B4D8]" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                    </svg>
+                  </div>
+                ) : (
+                  timeSlots.map(slot => (
+                    <button key={slot.value} type="button"
+                      disabled={slot.booked}
+                      onClick={() => {
+                        setPreferredTime(slot.value)
+                        timeDisplayRef.current = slot.display
+                        setShowTimeDropdown(false)
+                        setErrors(er => ({ ...er, time: '' }))
+                      }}
+                      className={`w-full text-left px-4 py-2.5 font-poppins text-[13px] first:rounded-t-xl last:rounded-b-xl transition-colors flex items-center justify-between ${
+                        slot.booked
+                          ? 'text-[#b0b8c8] cursor-not-allowed bg-[#f8faff]'
+                          : 'text-[#02034a] hover:bg-[#F7F6FC]'
+                      }`}
+                    >
+                      {slot.display}
+                      {slot.booked && (
+                        <span className="font-poppins text-[10px] font-bold text-[#b0b8c8]">Booked</span>
+                      )}
+                    </button>
+                  ))
+                )}
               </div>
             )}
             {errors.time && <p className="mt-1 font-poppins text-xs text-red-300">{errors.time}</p>}
           </div>
+        </div>
+
+        {/* ── Consent ── */}
+        <div className="mb-4 flex flex-col gap-2.5 rounded-xl border border-white/10 bg-white/5 p-4">
+          <p className="font-poppins text-[9.5px] font-bold uppercase tracking-[0.16em] text-white/35">Agreements &amp; Consent</p>
+          {([
+            {
+              key: 'consentTerms', state: consentTerms, set: setConsentTerms,
+              label: <>I agree to the <a href="/terms" target="_blank" className="text-[#00B4D8] underline">Terms of Service</a> including the cancellation policy</>,
+            },
+            {
+              key: 'consentMedical', state: consentMedical, set: setConsentMedical,
+              label: 'I understand AiwasLabs provides private diagnostic testing only - not a substitute for NHS or GP care. In an emergency I will call 999',
+            },
+            {
+              key: 'consentData', state: consentData, set: setConsentData,
+              label: <>I consent to AiwasLabs processing my health and test result data as described in the <a href="/privacy" target="_blank" className="text-[#00B4D8] underline">Privacy Policy</a> (UK GDPR Article 9)</>,
+            },
+            {
+              key: 'consentAge', state: consentAge, set: setConsentAge,
+              label: 'I confirm I am 18 years of age or older (or have parental/guardian consent)',
+            },
+          ] as const).map(({ key, state, set, label }) => (
+            <label key={key} className="flex items-start gap-3 cursor-pointer">
+              <span className="relative mt-[2px] flex-shrink-0">
+                <input
+                  type="checkbox" checked={state}
+                  onChange={e => { set(e.target.checked); setErrors(er => ({ ...er, [key]: '' })) }}
+                  className="sr-only"
+                />
+                <span className={`flex h-5 w-5 items-center justify-center rounded border-2 transition-colors ${
+                  state ? 'border-[#00B4D8] bg-[#00B4D8]' : errors[key] ? 'border-red-400 bg-white/10' : 'border-white/25 bg-white/10'
+                }`}>
+                  {state && (
+                    <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
+                      <path d="M1 4.5L4 7.5L10 1.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </span>
+              </span>
+              <span className={`font-poppins text-[11.5px] leading-[1.5] ${errors[key] ? 'text-red-300' : 'text-white/65'}`}>
+                {label} <span className="text-red-400">*</span>
+              </span>
+            </label>
+          ))}
         </div>
 
         {status === 'error' && (
