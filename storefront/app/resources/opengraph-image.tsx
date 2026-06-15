@@ -2,6 +2,7 @@ import { ImageResponse } from 'next/og'
 import { ARTICLES } from '@/lib/articles'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 export const alt = 'Health Resources - Biomarker Guides | AiwasLabs'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
@@ -10,7 +11,7 @@ async function loadFont(name: string, weight: number): Promise<ArrayBuffer | nul
   try {
     const css = await fetch(
       `https://fonts.googleapis.com/css2?family=${name}:wght@${weight}&display=swap`,
-      { headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36' } }
+      { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MSIE 6.0; Windows NT 5.1)' } }
     ).then(r => r.text())
     const url = css.match(/url\(([^)]+)\)/)?.[1]
     if (!url) return null
@@ -28,7 +29,7 @@ export default async function Image() {
     loadFont('Poppins', 600),
   ])
 
-  const fonts: ConstructorParameters<typeof ImageResponse>[1]['fonts'] = []
+  const fonts: { name: string; data: ArrayBuffer; weight: 100|200|300|400|500|600|700|800|900; style: "normal"|"italic" }[] = []
   if (merriweather) fonts.push({ name: 'Merriweather', data: merriweather, weight: 900, style: 'normal' })
   if (poppins)      fonts.push({ name: 'Poppins',      data: poppins,      weight: 600, style: 'normal' })
 
